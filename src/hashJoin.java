@@ -18,7 +18,6 @@ public class hashJoin {
 	HashMap<String, List <String> > subFileList = new HashMap<String, List<String>>();
 	BufferedReader bfr = null;
 	String relation1 = null, relation2 = null;
-	int count = 0;
 	
 	public void join(String R, String S, int memoryBlocks) throws IOException {
 		
@@ -36,11 +35,11 @@ public class hashJoin {
 		if(S.contains("/")) {
 			relation2 = S.substring(S.lastIndexOf("/"), S.length());
 		}		
-		//bfr = new BufferedReader(new FileReader(new File(R)));
-		//open(relation1, bfr, memoryBlocks);
+		bfr = new BufferedReader(new FileReader(new File(R)));
+		open(relation1, bfr, memoryBlocks, 1);
 		bfr = new BufferedReader(new FileReader(new File(S)));
-		open(relation2, bfr, memoryBlocks);
-		System.out.println(count);
+		open(relation2, bfr, memoryBlocks, 2);
+		
 	}
 	
 	/*
@@ -48,7 +47,7 @@ public class hashJoin {
 	 * 
 	 */
 	
-	private void open(String relation, BufferedReader bfr, int memoryBlocks) throws IOException {
+	private void open(String relation, BufferedReader bfr, int memoryBlocks, int relNumber) throws IOException {
 		
 		String line = null;
 		int hashCode = 0;
@@ -57,7 +56,11 @@ public class hashJoin {
 		while((line = bfr.readLine()) != null) {
 			
 			//	Here we have considered that the relations R and S will have only two attributes
-			hashCode = (line.split(" ")[1].hashCode()) % (memoryBlocks - 1);
+			if(relNumber == 1) { 
+				hashCode = (line.split(" ")[1].hashCode()) % (memoryBlocks - 1);
+			} else {
+				hashCode = (line.split(" ")[0].hashCode()) % (memoryBlocks - 1);
+			}
 			
 			// Check if the hashmap contains the relation as the key
 			if(!subLists.containsKey(relation)) {
@@ -87,7 +90,6 @@ public class hashJoin {
 				}				
 				BufferedWriter bfw = new BufferedWriter(new FileWriter(new File(String.valueOf(hashCode) + "_" + relation), true));				
 				for(int i = 0; i < M; i++) {
-					count++;
 					bfw.write(toWriteToFile.get(i) + "\n");
 				}
 				bfw.close();
@@ -117,7 +119,6 @@ public class hashJoin {
 		  
 		  BufferedWriter bfw = new BufferedWriter(new FileWriter(new File(String.valueOf(thisEntry.getKey()) + "_" + relation), true));				
 		  for(int i = 0; i < subLists.get(relation).get(thisEntry.getKey()).size(); i++) {
-			  count++;
 			  bfw.write(toWriteToFile.get(i) + "\n");
 		  }
 		  bfw.close();
