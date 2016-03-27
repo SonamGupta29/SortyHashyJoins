@@ -1,0 +1,22 @@
+Given M memory blocks and two large relations R(X,Y) and S(Y,Z). Develop iterator for the
+following operations.
+● Sort-Merge join
+○ open() - Create sorted sublists for R and S, each of size M buffers.
+○ getnext() - Use 1 block for each sublist and get min. of R & S. Join this minimum Y value with other table and return. Check for B(R)+B(S)<M^2. [getnext() returns the next tuple of join]
+○ close() - close all files
+● Hash-Join
+○ open() - Create M-1 hashed sublists for R and S
+○ getnext() - For each Ri and Si thus created, load the portion of smaller of the two in the main memory and create a search structure over it. You can use M-1 buffers to achieve this. Then recursively load the other file in the remaining buffer and for each record of this file, search corresponding records (with same join attribute value) from the other file. [getnext() returns the next tuple of join]
+○ close() - close all files 
+
+Note: None of the relation R or S fits completely in main memory.
+
+Join condition (R.Y==S.Y).
+Use 1 buffer for output which is filled by row returned by getnext() and when it gets full, append it to output file and continue.
+Input Parameters:
+You will be given as an input the files containing relations R and S and the value of M blocks.
+Attribute Type: Note that all attributes, X, Y and Z are strings and Y may be a non-key attribute.
+Block size: Assume that each block can store 100 tuples for both relations, R and S.
+Input Format: ./a.out <path of R file> <path of S file> <sort/hash> <M>
+Output:Output File: <R filename>_<S filename>_join (Kindly note it should contain only R & S filename
+and not their path).
