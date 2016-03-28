@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,7 +26,6 @@ public class hashJoin {
 		//	Get the handle to the relation R		
 		//	get just name of relations, if it contains the
 		
-		System.out.println("here");
 		relation1 = R;
 		relation2 = S;
 		
@@ -40,13 +40,11 @@ public class hashJoin {
 		bfr = new BufferedReader(new FileReader(new File(S)));
 		open(relation2, bfr, memoryBlocks, 2);
 		
+		getnext();
+		
+		close(bfr);
 	}
-	
-	/*
-	 * Need M - 1 buckets 
-	 * 
-	 */
-	
+
 	private void open(String relation, BufferedReader bfr, int memoryBlocks, int relNumber) throws IOException {
 		
 		String line = null;
@@ -57,11 +55,10 @@ public class hashJoin {
 			
 			//	Here we have considered that the relations R and S will have only two attributes
 			if(relNumber == 1) { 
-				hashCode = (line.split(" ")[1].hashCode()) % (memoryBlocks - 1);
+				hashCode = (line.split(" ")[1].trim().hashCode()) % (memoryBlocks - 1);
 			} else {
-				hashCode = (line.split(" ")[0].hashCode()) % (memoryBlocks - 1);
+				hashCode = (line.split(" ")[0].trim().hashCode()) % (memoryBlocks - 1);
 			}
-			
 			// Check if the hashmap contains the relation as the key
 			if(!subLists.containsKey(relation)) {
 				HashMap <Integer, List<String >> subRelList = new HashMap <Integer, List<String> >();
@@ -102,7 +99,6 @@ public class hashJoin {
 		Iterator<Entry<Integer, List<String>>> entries = subLists.get(relation).entrySet().iterator();
 		while (entries.hasNext()) {
 		  Entry thisEntry = (Entry) entries.next();		  
-		  Object key = thisEntry.getKey();
 		  if(subLists.get(relation).get(thisEntry.getKey()).size() == 0)
 			  continue;
 		  @SuppressWarnings("unchecked")
@@ -124,5 +120,63 @@ public class hashJoin {
 		  bfw.close();
 		  subLists.get(relation).get(thisEntry.getKey()).clear();
 		}		
+	}
+	
+	public void getnext() throws IOException {
+		
+		//	Output relation
+		String outputRelation = relation1 + "_" + relation2 + "_join";
+		BufferedWriter bfwOutput =  new BufferedWriter(new FileWriter(new File(outputRelation)));
+		
+		List <String> RFileList = subFileList.get(relation1);
+		int count = 0;
+		while(true) {
+			if(count >= RFileList.size())
+					break;
+			//	Get the first file of R
+			String RFile = RFileList.get(count);
+			//	Get the corresponding file for the second relation
+			String SFile = RFile.substring(0, RFile.indexOf("_")) + "_" + relation2;
+			
+			// System.out.println("RFile : " + RFile + " SFile : " + SFile);
+			count++;
+			if(!new File(SFile).exists())
+				continue;
+			
+			BufferedReader bfrR = new BufferedReader(new FileReader(new File(RFile)));
+			BufferedReader bfrS = new BufferedReader(new FileReader(new File(SFile)));
+			
+			String line = null;
+			//	Get all the records of S in a list
+			List <String> SRecords = new ArrayList<String>();
+			while((line = bfrS.readLine()) != null) {
+				SRecords.add(line);
+			}
+			bfrS.close();
+			while((line = bfrR.readLine()) != null) {
+				for(String record : SRecords) {
+					// R.Y == S.Y condition
+					// System.out.println(line + " :" + record);
+					if(line.split(" ")[1].trim().equals(record.split(" ")[0].trim())){
+						bfwOutput.write(line + " " + record.split(" ")[1].trim() + "\n");
+					}
+				}
+			}
+			bfrR.close();
+		}
+		bfwOutput.close();
+	}
+	
+	private void close(BufferedReader bfr) throws IOException {
+		bfr.close();
+		// And delete all the file
+		for(String file : subFileList.get(relation1)) {
+			if(!new File(file).delete()) 
+				System.err.println("Error in deleting the file : " + file);
+		}
+		for(String file : subFileList.get(relation2)) {
+			if(!new File(file).delete()) 
+				System.err.println("Error in deleting the file : " + file);
+		}
 	}
 }
